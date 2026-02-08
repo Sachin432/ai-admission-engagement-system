@@ -1,0 +1,4 @@
+streamlit
+twilio
+python-dotenv
+requests
