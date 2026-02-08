@@ -1,4 +1,8 @@
-streamlit
+streamlit==1.32.2
 twilio
-python-dotenv
 requests
+langchain
+langchain-groq
+langchain-huggingface
+langsmith
+pydub
