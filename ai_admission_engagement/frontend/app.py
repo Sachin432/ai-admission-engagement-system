@@ -1,15 +1,9 @@
 import streamlit as st
 import requests
 import time
-import os
 from twilio.rest import Client
 from langchain_groq import ChatGroq
-# from langchain.prompts import PromptTemplate
 from langchain_core.prompts import PromptTemplate
-
-
-
-from langchain.chains import LLMChain
 
 # ----------------------------
 # Load secrets
@@ -101,7 +95,6 @@ def poll_call_and_get_recording(call_sid, timeout_sec=300, poll_every=10):
     return None
 
 def download_recording(uri):
-    # Twilio gives relative URI; build absolute
     url = f"https://api.twilio.com{uri.replace('.json', '.wav')}"
     r = requests.get(url, auth=(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN))
     if r.status_code != 200:
@@ -110,14 +103,13 @@ def download_recording(uri):
 
 # ----------------------------
 # STT (placeholder)
-# Replace with Whisper or HF pipeline if you want real STT
 # ----------------------------
 def speech_to_text(audio_bytes):
-    # TODO: integrate Whisper/HF. For MVP, return placeholder.
+    # TODO: integrate Whisper/HF later
     return "User discussed interest, budget, and timeline."
 
 # ----------------------------
-# LangChain analysis
+# LangChain analysis (NEW API)
 # ----------------------------
 def analyze_transcript(transcript: str):
     prompt = PromptTemplate(
@@ -141,9 +133,13 @@ Return JSON with keys:
 interest_level, budget, timeline, program_interest, score, category, summary
 """
     )
-    chain = LLMChain(llm=llm, prompt=prompt)
-    out = chain.run(t=transcript)
-    return out
+
+    # New runnable style: prompt | llm
+    chain = prompt | llm
+    out = chain.invoke({"t": transcript})
+
+    # out is an AIMessage; text is in .content
+    return out.content
 
 # ----------------------------
 # UI
@@ -190,7 +186,6 @@ if st.button("Poll Call, Analyze, Save"):
                 result_json_text = analyze_transcript(transcript)
                 st.write("AI Output (raw):", result_json_text)
 
-                # Save raw + mark analyzed (you can parse JSON if you enforce strict JSON)
                 update_lead(lead_id, {
                     "transcript": transcript,
                     "summary": result_json_text,
